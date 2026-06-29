@@ -538,7 +538,8 @@ async function runLookup() {
   setLoading('Fetching MOT history...');
   let mot;
   try {
-    const r = await fetch(MOT_URL + reg, {
+   const motUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(MOT_URL + reg);
+const r = await fetch(motUrl, {
       headers: { 'Authorization': 'Bearer ' + token, 'X-API-Key': creds.apiKey, 'Accept': 'application/json' }
     });
     if (r.status === 404) throw new Error('No records found for ' + reg + '. Check the plate and try again.');
