@@ -493,7 +493,7 @@ async function getToken(creds) {
     scope: 'https://tapi.dvsa.gov.uk/.default'
   });
 
-  const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(creds.tokenUrl);
+  const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(creds.tokenUrl);
 
   const r = await fetch(proxyUrl, {
     method: 'POST',
