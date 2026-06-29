@@ -486,24 +486,19 @@ function fmtMi(n){ return Number(n).toLocaleString('en-GB') + ' mi'; }
 async function getToken(creds) {
   if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
 
-  const params = new URLSearchParams({
-    grant_type: 'client_credentials',
-    client_id: creds.clientId,
-    client_secret: creds.secret,
-    scope: 'https://tapi.dvsa.gov.uk/.default'
-  });
-
-  const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(creds.tokenUrl);
-
-  const r = await fetch(proxyUrl, {
+  const r = await fetch('/.netlify/functions/get-token', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString()
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      clientId: creds.clientId,
+      clientSecret: creds.secret,
+      tokenUrl: creds.tokenUrl
+    })
   });
 
   if (!r.ok) {
     const err = await r.json().catch(() => ({}));
-    throw new Error('Authentication failed — check your Client ID, Secret and Token URL. ' + (err.error_description || ''));
+    throw new Error('Authentication failed — check your Client ID, Secret and Token URL. ' + (err.detail?.error_description || ''));
   }
   const d = await r.json();
   cachedToken = d.access_token;
@@ -538,9 +533,10 @@ async function runLookup() {
   setLoading('Fetching MOT history...');
   let mot;
   try {
-   const motUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(MOT_URL + reg);
-const r = await fetch(motUrl, {
-      headers: { 'Authorization': 'Bearer ' + token, 'X-API-Key': creds.apiKey, 'Accept': 'application/json' }
+    const r = await fetch('/.netlify/functions/mot-lookup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reg, token, apiKey: creds.apiKey })
     });
     if (r.status === 404) throw new Error('No records found for ' + reg + '. Check the plate and try again.');
     if (r.status === 401) { cachedToken = null; throw new Error('MOT API authentication failed — check your API key.'); }
