@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bike Buyer">
+<meta name="theme-color" content="#111111">
+<title>Bike Buyer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --black: #111;
+    --white: #fff;
+    --grey-0: #f7f7f5;
+    --grey-1: #eeede9;
+    --grey-2: #d4d3ce;
+    --grey-3: #8a8a85;
+    --grey-4: #444;
+    --plate: #F5C700;
+    --plate-border: #b8950a;
+    --plate-text: #111;
+    --accent: #1a56db;
+    --radius: 10px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--black);
+    color: var(--white);
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-bottom: calc(var(--safe-bottom) + 1rem);
+  }
+
+  .app-header {
+    background: var(--black);
+    padding: calc(var(--safe-top) + 1rem) 1.25rem 1rem;
+    border-bottom: 1px solid #222;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .app-header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .main { padding: 1.25rem; max-width: 520px; margin: 0 auto; }
+
+  .no-creds {
+    background: #1a1200;
+    border: 1px solid #3a2a00;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #d4940a;
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  .lookup-card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 14px;
+    padding: 1.1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .plate-input {
+    width: 100%;
+    background: var(--plate);
+    border: 2px solid var(--plate-border);
+    border-radius: 10px;
+    color: var(--plate-text);
+    font-size: 28px;
+    font-weight: 800;
+    font-family: 'SF Mono', 'Courier New', monospace;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 12px 1rem;
+    outline: none;
+    margin-bottom: 10px;
+    -webkit-appearance: none;
+  }
+
+  .plate-input::placeholder { color: #9a8000; letter-spacing: 4px; font-weight: 600; }
+  .plate-input:focus { border-color: #7a6300; }
+
+  .mileage-row { display: flex; gap: 8px; }
+
+  .mileage-wrap { flex: 1; position: relative; }
+
+  .mileage-wrap input {
+    width: 100%;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 16px;
+    padding: 11px 42px 11px 12px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  .mileage-wrap input:focus { border-color: #555; }
+  .mileage-wrap input::placeholder { color: #444; }
+  .mileage-unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: #555; pointer-events: none; }
+
+  .lookup-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 0 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    -webkit-appearance: none;
+  }
+
+  .lookup-btn:active { opacity: 0.85; }
+  .lookup-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .hint { font-size: 12px; color: #444; margin-top: 6px; }
+
+  .loading {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--grey-3);
+    font-size: 14px;
+    display: none;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 20px; height: 20px;
+    border: 2px solid #333;
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 10px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-box {
+    background: #2a0a0a;
+    border: 1px solid #4a1a1a;
+    border-radius: var(--radius);
+    color: #e05c5c;
+    font-size: 14px;
+    padding: 12px 14px;
+    margin-bottom: 1rem;
+    display: none;
+    line-height: 1.5;
+  }
+
+  .result { display: none; }
+
+  .result-card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 14px;
+    padding: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .bike-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+
+  .bike-avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: #0d2a4a;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .bike-name { font-size: 20px; font-weight: 700; color: var(--white); letter-spacing: -0.3px; }
+  .bike-sub { font-size: 13px; color: var(--grey-3); margin-top: 2px; }
+
+  .specs { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 6px; margin-bottom: 1rem; }
+
+  .spec { background: #111; border-radius: 8px; padding: 8px 6px; text-align: center; }
+  .spec-label { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; }
+  .spec-value { font-size: 13px; font-weight: 600; color: var(--white); }
+  .spec-value.ok { color: #5cb85c; }
+  .spec-value.warn { color: #e05c5c; }
+
+  .divider { border: none; border-top: 1px solid #222; margin: 1rem 0; }
+
+  .section-label { font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+
+  .prices { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; margin-bottom: 1rem; }
+
+  .price-cell { border-radius: 10px; padding: 11px 8px; text-align: center; }
+  .price-cell.low { background: #0d1f0a; border: 1px solid #2a4a1a; }
+  .price-cell.est { background: #0d1a2e; border: 2px solid #1a4a8a; }
+  .price-cell.high { background: #1f1500; border: 1px solid #4a3500; }
+
+  .price-tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+  .price-cell.low .price-tag { color: #5cb85c; }
+  .price-cell.est .price-tag { color: #4a9eff; }
+  .price-cell.high .price-tag { color: #d4940a; }
+
+  .price-amount { font-size: 18px; font-weight: 700; color: var(--white); }
+  .price-desc { font-size: 10px; color: #555; margin-top: 2px; }
+
+  .miles-note {
+    background: #111;
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13px;
+    color: var(--grey-3);
+    line-height: 1.5;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .insight {
+    background: #111;
+    border-left: 3px solid #1a56db;
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--grey-2);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .mot-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+
+  .mot-badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+  .mot-badge.pass { background: #0d1f0a; color: #5cb85c; border: 1px solid #2a4a1a; }
+  .mot-badge.fail { background: #2a0a0a; color: #e05c5c; border: 1px solid #4a1a1a; }
+
+  .mot-meta { font-size: 12px; color: #555; margin-bottom: 10px; line-height: 1.8; }
+  .mot-meta strong { color: var(--grey-3); }
+
+  .advisory-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .advisory { display: flex; gap: 8px; align-items: flex-start; padding: 9px 11px; font-size: 13px; line-height: 1.5; }
+  .advisory.fail { background: #2a0a0a; border-left: 3px solid #e05c5c; color: var(--grey-2); }
+  .advisory.adv  { background: #1f1500; border-left: 3px solid #d4940a; color: var(--grey-2); }
+  .advisory.minor{ background: #0d1f0a; border-left: 3px solid #5cb85c; color: var(--grey-2); }
+
+  .advisory .ico { flex-shrink: 0; margin-top: 1px; }
+  .advisory.fail .ico { color: #e05c5c; }
+  .advisory.adv  .ico { color: #d4940a; }
+  .advisory.minor .ico { color: #5cb85c; }
+  .advisory strong { color: var(--white); }
+
+  .dangerous-tag { display: inline-block; background: #4a0a0a; color: #e05c5c; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+
+  .clean-mot { background: #0d1f0a; border: 1px solid #2a4a1a; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #5cb85c; display: flex; align-items: center; gap: 8px; }
+
+  .prev-mot { font-size: 12px; color: #444; padding: 8px 10px; background: #111; border-radius: 8px; margin-top: 8px; }
+
+  .actions { display: flex; flex-direction: column; gap: 8px; }
+
+  .action-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; border: none; -webkit-appearance: none; width: 100%; }
+  .action-btn.primary { background: var(--accent); color: white; }
+  .action-btn.secondary { background: #222; color: var(--grey-2); border: 1px solid #333; }
+  .action-btn.primary:active { opacity: 0.85; }
+  .action-btn.secondary:active { background: #2a2a2a; }
+
+  .setup-card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 1.25rem; }
+
+  .setup-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+
+  .setup-title { font-size: 12px; font-weight: 600; color: var(--grey-3); text-transform: uppercase; letter-spacing: 0.6px; display: flex; align-items: center; gap: 6px; }
+
+  .chevron { font-size: 12px; color: #444; transition: transform 0.2s; }
+  .chevron.open { transform: rotate(180deg); }
+
+  .setup-body { overflow: hidden; transition: max-height 0.25s ease; max-height: 0; }
+
+  .field-group { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11px; color: var(--grey-3); text-transform: uppercase; letter-spacing: 0.4px; }
+  .field input { background: #111; border: 1px solid #333; border-radius: 8px; color: var(--white); font-size: 12px; font-family: 'SF Mono', 'Courier New', monospace; padding: 9px 11px; width: 100%; outline: none; -webkit-appearance: none; }
+  .field input:focus { border-color: #555; }
+  .field input::placeholder { color: #444; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .save-btn { margin-top: 10px; width: 100%; background: #222; border: 1px solid #333; border-radius: 8px; color: var(--grey-2); font-size: 13px; font-weight: 500; padding: 9px; cursor: pointer; }
+  .save-btn:active { background: #2a2a2a; }
+  .save-btn.saved { color: #5cb85c; background: #0d1f0a; border-color: #2a4a1a; }
+
+  .demo-btn { margin-top: 10px; width: 100%; background: transparent; border: 1px dashed #333; border-radius: 8px; color: #555; font-size: 13px; padding: 9px; cursor: pointer; }
+  .demo-btn:active { background: #1a1a1a; }
+
+  .demo-banner { background: #1a1200; border: 1px solid #3a2a00; border-radius: var(--radius); padding: 9px 14px; margin-bottom: 1rem; font-size: 13px; color: #d4940a; display: none; }
+
+  .profit-card { background: #111; border-radius: 10px; padding: 1rem; margin-top: 1rem; }
+  .profit-input-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .profit-input-wrap { flex: 1; position: relative; }
+  .profit-prefix { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #555; pointer-events: none; }
+  .profit-input-wrap input { width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; color: var(--white); font-size: 18px; font-weight: 600; padding: 11px 12px 11px 26px; outline: none; -webkit-appearance: none; }
+  .profit-input-wrap input:focus { border-color: #555; }
+  .profit-input-wrap input::placeholder { color: #333; }
+  .calc-btn { background: #222; border: 1px solid #333; border-radius: 8px; color: var(--grey-2); font-size: 14px; font-weight: 500; padding: 11px 16px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+  .calc-btn:active { background: #2a2a2a; }
+  .profit-result { display: none; }
+  .profit-stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; margin-bottom: 10px; }
+  .profit-stat { background: #1a1a1a; border-radius: 8px; padding: 10px 8px; text-align: center; }
+  .profit-stat-label { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+  .profit-stat-value { font-size: 17px; font-weight: 700; }
+  .profit-stat-value.pos { color: #5cb85c; }
+  .profit-stat-value.neg { color: #e05c5c; }
+  .profit-stat-value.neu { color: var(--white); }
+  .profit-verdict { border-radius: 8px; padding: 10px 12px; font-size: 13px; font-weight: 500; text-align: center; }
+  .profit-verdict.great { background: #0d1f0a; color: #5cb85c; border: 1px solid #2a4a1a; }
+  .profit-verdict.ok    { background: #0d1a2e; color: #4a9eff; border: 1px solid #1a4a8a; }
+  .profit-verdict.tight { background: #1f1500; color: #d4940a; border: 1px solid #4a3500; }
+  .profit-verdict.loss  { background: #2a0a0a; color: #e05c5c; border: 1px solid #4a1a1a; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>🏍️ Bike Buyer</h1>
+</div>
+
+<div class="main">
+
+  <div class="no-creds" id="noCreds">
+    Enter your API credentials below before looking up a bike.
+  </div>
+
+  <div class="demo-banner" id="demoBanner">
+    👀 Demo mode — showing example data for a 2019 Kawasaki Z650
+  </div>
+
+  <div class="lookup-card">
+    <input class="plate-input" id="regInput" type="text" placeholder="AB12 CDE" maxlength="8" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="characters" />
+    <div class="mileage-row">
+      <div class="mileage-wrap">
+        <input id="mileageInput" type="number" placeholder="Mileage (optional)" inputmode="numeric" />
+        <span class="mileage-unit">mi</span>
+      </div>
+      <button class="lookup-btn" id="lookupBtn" onclick="runLookup()">Search</button>
+    </div>
+    <p class="hint">Mileage improves price accuracy</p>
+    <button class="demo-btn" onclick="runDemo()">👀 Try a demo lookup</button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div id="loadingMsg">Looking up vehicle...</div>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+  <div class="result" id="result"></div>
+
+  <div class="setup-card">
+    <div class="setup-toggle" id="setupToggle" onclick="toggleSetup()">
+      <div class="setup-title">🔑 API credentials</div>
+      <span class="chevron" id="chevron">▼</span>
+    </div>
+    <div class="setup-body" id="setupBody">
+      <div class="field-group">
+        <div class="field">
+          <label>Anthropic API key</label>
+          <input id="c-anthropic" type="password" placeholder="sk-ant-..." autocomplete="off" oninput="markUnsaved()" />
+        </div>
+        <div class="field">
+          <label>MOT history API key</label>
+          <input id="c-apikey" type="password" placeholder="Your MOT API key" autocomplete="off" oninput="markUnsaved()" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Client ID</label>
+            <input id="c-clientid" type="password" placeholder="cdaf0a6c..." autocomplete="off" oninput="markUnsaved()" />
+          </div>
+          <div class="field">
+            <label>Client secret</label>
+            <input id="c-secret" type="password" placeholder="Your new secret" autocomplete="off" oninput="markUnsaved()" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Token URL</label>
+          <input id="c-tokenurl" type="text" placeholder="https://login.microsoftonline.com/..." autocomplete="off" oninput="markUnsaved()" />
+        </div>
+      </div>
+      <button class="save-btn" id="saveBtn" onclick="saveCreds()">Save credentials</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const MOT_URL = 'https://history.mot.api.gov.uk/v1/trade/vehicles/registration/';
+let cachedToken = null, tokenExpiry = 0;
+
+function saveCreds() {
+  ['c-anthropic','c-apikey','c-clientid','c-secret','c-tokenurl'].forEach(k => {
+    const v = document.getElementById(k).value.trim();
+    if (v) localStorage.setItem(k, v);
+  });
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  btn.textContent = '✓ Saved';
+  document.getElementById('noCreds').style.display = 'none';
+}
+
+function markUnsaved() {
+  const btn = document.getElementById('saveBtn');
+  btn.classList.remove('saved');
+  btn.textContent = 'Save credentials';
+}
+
+function loadCreds() {
+  const keys = ['c-anthropic','c-apikey','c-clientid','c-secret','c-tokenurl'];
+  let any = false;
+  keys.forEach(k => {
+    const v = localStorage.getItem(k);
+    if (v) { document.getElementById(k).value = v; any = true; }
+  });
+  if (!any) {
+    document.getElementById('noCreds').style.display = 'block';
+    toggleSetup(true);
+  }
+}
+
+function getCreds() {
+  const get = k => document.getElementById(k).value.trim() || localStorage.getItem(k) || '';
+  return {
+    anthropic: get('c-anthropic'),
+    apiKey:    get('c-apikey'),
+    clientId:  get('c-clientid'),
+    secret:    get('c-secret'),
+    tokenUrl:  get('c-tokenurl')
+  };
+}
+
+let setupOpen = false;
+function toggleSetup(forceOpen) {
+  setupOpen = forceOpen !== undefined ? forceOpen : !setupOpen;
+  const body    = document.getElementById('setupBody');
+  const chevron = document.getElementById('chevron');
+  body.style.maxHeight = setupOpen ? '600px' : '0';
+  chevron.classList.toggle('open', setupOpen);
+}
+
+function setLoading(msg) {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('loadingMsg').textContent = msg;
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('lookupBtn').disabled = true;
+}
+
+function stopLoading() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('lookupBtn').disabled = false;
+}
+
+function showError(msg) {
+  stopLoading();
+  const b = document.getElementById('errorBox');
+  b.textContent = msg;
+  b.style.display = 'block';
+}
+
+function fmt(n)  { return '£' + Math.round(Number(n)).toLocaleString('en-GB'); }
+function fmtMi(n){ return Number(n).toLocaleString('en-GB') + ' mi'; }
+
+async function getToken(creds) {
+  if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
+
+  const params = new URLSearchParams({
+    grant_type: 'client_credentials',
+    client_id: creds.clientId,
+    client_secret: creds.secret,
+    scope: 'https://tapi.dvsa.gov.uk/.default'
+  });
+
+  const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(creds.tokenUrl);
+
+  const r = await fetch(proxyUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  });
+
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error('Authentication failed — check your Client ID, Secret and Token URL. ' + (err.error_description || ''));
+  }
+  const d = await r.json();
+  cachedToken = d.access_token;
+  tokenExpiry = Date.now() + (d.expires_in - 60) * 1000;
+  return cachedToken;
+}
+
+async function runLookup() {
+  const reg = document.getElementById('regInput').value.replace(/\s/g,'').toUpperCase();
+  if (!reg || reg.length < 2) { showError('Enter a valid UK registration number.'); return; }
+
+  const creds = getCreds();
+  const missing = [];
+  if (!creds.anthropic) missing.push('Anthropic API key');
+  if (!creds.apiKey)    missing.push('MOT API key');
+  if (!creds.clientId)  missing.push('Client ID');
+  if (!creds.secret)    missing.push('Client secret');
+  if (!creds.tokenUrl)  missing.push('Token URL');
+  if (missing.length) {
+    showError('Missing: ' + missing.join(', ') + '. Fill in the credentials section below.');
+    toggleSetup(true);
+    return;
+  }
+
+  const manualMileage = document.getElementById('mileageInput').value ? parseInt(document.getElementById('mileageInput').value) : null;
+
+  setLoading('Authenticating with DVSA...');
+  let token;
+  try { token = await getToken(creds); }
+  catch(e) { showError(e.message); return; }
+
+  setLoading('Fetching MOT history...');
+  let mot;
+  try {
+    const r = await fetch(MOT_URL + reg, {
+      headers: { 'Authorization': 'Bearer ' + token, 'X-API-Key': creds.apiKey, 'Accept': 'application/json' }
+    });
+    if (r.status === 404) throw new Error('No records found for ' + reg + '. Check the plate and try again.');
+    if (r.status === 401) { cachedToken = null; throw new Error('MOT API authentication failed — check your API key.'); }
+    if (!r.ok) throw new Error('MOT API error (' + r.status + '). Try again shortly.');
+    mot = await r.json();
+  } catch(e) { showError(e.message); return; }
+
+  const make     = mot.make || 'Unknown';
+  const model    = mot.model || '';
+  const colour   = mot.primaryColour || '';
+  const firstUsed = mot.firstUsedDate || mot.registrationDate || '';
+  const year     = firstUsed ? firstUsed.substring(0,4) : '?';
+  const engineCC = mot.engineSize || '';
+  const fuelType = mot.fuelType || '';
+  const tests    = mot.motTests || [];
+  const latest   = tests.length ? tests[0] : null;
+  const latestMiles = latest?.odometerValue ? parseInt(latest.odometerValue) : null;
+  const miles    = manualMileage ?? latestMiles;
+
+  setLoading('Getting AI price estimate...');
+  let ai;
+  try {
+    const advCount  = (latest?.rfrAndComments||[]).filter(i=>i.type==='ADVISORY').length;
+    const failCount = (latest?.rfrAndComments||[]).filter(i=>i.type==='FAIL').length;
+    const prompt = `You are a UK used motorcycle dealer valuation expert. A garage is considering buying:
+Make: ${make}, Model: ${model}, Year: ${year}, Engine: ${engineCC?engineCC+'cc':'unknown'}, Fuel: ${fuelType}, Colour: ${colour}
+Mileage: ${miles ? fmtMi(miles) : 'unknown'}
+Latest MOT: ${latest ? latest.testResult + ' (' + latest.completedDate + ')' : 'none'}
+${advCount ? advCount+' advisory notice(s). ' : ''}${failCount ? failCount+' failure(s). ' : ''}
+Give: priceLow (rough/high mileage retail), priceEst (fair retail for this mileage/age), priceHigh (excellent condition retail), mileageNote (one sentence on mileage impact, omit if unknown), insight (2 sentences of dealer buying advice).
+Respond ONLY as JSON, no markdown: {"priceLow":0,"priceEst":0,"priceHigh":0,"mileageNote":"","insight":""}`;
+
+    const ar = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': creds.anthropic,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, messages: [{ role:'user', content: prompt }] })
+    });
+    if (!ar.ok) {
+      const err = await ar.json().catch(()=>({}));
+      throw new Error('Price estimate failed — check your Anthropic API key. ' + (err.error?.message||''));
+    }
+    const ad = await ar.json();
+    const txt = ad.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+    ai = JSON.parse(txt);
+  } catch(e) { showError(e.message); return; }
+
+  stopLoading();
+  renderResult({ make, model, colour, year, engineCC, fuelType, miles, latest, tests, ai });
+}
+
+function renderResult({ make, model, colour, year, engineCC, fuelType, miles, latest, tests, ai }) {
+  const makeModel = `${make} ${model}`.trim();
+  const atURL = `https://www.autotrader.co.uk/bikes/used?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&year-from=${Math.max(2000,parseInt(year)-2)}&year-to=${parseInt(year)+1}`;
+
+  const failures   = (latest?.rfrAndComments||[]).filter(i=>i.type==='FAIL');
+  const advisories = (latest?.rfrAndComments||[]).filter(i=>i.type==='ADVISORY');
+  const minors     = (latest?.rfrAndComments||[]).filter(i=>i.type==='MINOR');
+
+  function motHTML() {
+    if (!latest) return '<p style="font-size:13px;color:#444;">No MOT history found.</p>';
+    const passed = latest.testResult === 'PASSED';
+    let h = `<div class="mot-header-row">
+      <div class="section-label" style="margin:0;">Latest MOT</div>
+      <span class="mot-badge ${passed?'pass':'fail'}">${passed?'Passed':'Failed'}</span>
+    </div>
+    <div class="mot-meta">
+      ${latest.completedDate ? 'Test date: <strong>'+latest.completedDate+'</strong><br>' : ''}
+      ${latest.odometerValue ? 'Recorded at: <strong>'+fmtMi(latest.odometerValue)+'</strong><br>' : ''}
+      ${latest.expiryDate ? 'Expires: <strong>'+latest.expiryDate+'</strong>' : ''}
+    </div>`;
+
+    const all = [...failures,...advisories,...minors];
+    if (!all.length) {
+      h += `<div class="clean-mot"><span>✓</span> No advisories or failures — clean MOT</div>`;
+    } else {
+      h += '<div class="advisory-list">';
+      failures.forEach(f => {
+        h += `<div class="advisory fail"><span class="ico">✕</span><span><strong>Failure:</strong> ${f.text}${f.dangerous?'<span class="dangerous-tag">Dangerous</span>':''}</span></div>`;
+      });
+      advisories.forEach(a => {
+        h += `<div class="advisory adv"><span class="ico">⚠</span><span><strong>Advisory:</strong> ${a.text}</span></div>`;
+      });
+      minors.forEach(m => {
+        h += `<div class="advisory minor"><span class="ico">ℹ</span><span><strong>Minor:</strong> ${m.text}</span></div>`;
+      });
+      h += '</div>';
+    }
+
+    if (tests.length > 1) {
+      const prev = tests[1];
+      const pF = (prev.rfrAndComments||[]).filter(i=>i.type==='FAIL').length;
+      const pA = (prev.rfrAndComments||[]).filter(i=>i.type==='ADVISORY').length;
+      if (pF || pA) h += `<div class="prev-mot">Previous test (${prev.completedDate||'?'}): ${pF} failure${pF!==1?'s':''}, ${pA} advisor${pA!==1?'ies':'y'}</div>`;
+    }
+    return h;
+  }
+
+  const html = `<div class="result-card">
+    <div class="bike-header">
+      <div class="bike-avatar">🏍️</div>
+      <div>
+        <div class="bike-name">${makeModel}</div>
+        <div class="bike-sub">${year}${colour?' · '+colour:''}${engineCC?' · '+engineCC+'cc':''}${fuelType?' · '+fuelType:''}</div>
+      </div>
+    </div>
+
+    <div class="specs">
+      <div class="spec"><div class="spec-label">Year</div><div class="spec-value">${year}</div></div>
+      <div class="spec"><div class="spec-label">Engine</div><div class="spec-value">${engineCC?engineCC+'cc':'—'}</div></div>
+      <div class="spec"><div class="spec-label">Mileage</div><div class="spec-value" style="font-size:11px;">${miles?fmtMi(miles):'—'}</div></div>
+      <div class="spec"><div class="spec-label">MOT</div><div class="spec-value ${latest?.testResult==='PASSED'?'ok':'warn'}" style="font-size:11px;">${latest?.testResult||'—'}</div></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-label">Market price range</div>
+    ${ai.mileageNote?`<div class="miles-note"><span>⏱</span><span>${ai.mileageNote}</span></div>`:''}
+    <div class="prices">
+      <div class="price-cell low"><div class="price-tag">Low end</div><div class="price-amount">${fmt(ai.priceLow)}</div><div class="price-desc">Rough / high mi</div></div>
+      <div class="price-cell est"><div class="price-tag">Est. retail</div><div class="price-amount">${fmt(ai.priceEst)}</div><div class="price-desc">Typical example</div></div>
+      <div class="price-cell high"><div class="price-tag">High end</div><div class="price-amount">${fmt(ai.priceHigh)}</div><div class="price-desc">Excellent cond.</div></div>
+    </div>
+    <div class="insight">${ai.insight}</div>
+
+    <div class="divider"></div>
+    <div class="section-label">Profit estimator</div>
+    <div class="profit-card">
+      <div class="profit-input-row">
+        <div class="profit-input-wrap">
+          <span class="profit-prefix">£</span>
+          <input type="number" id="buyPrice" placeholder="Your offer price" inputmode="numeric" oninput="calcProfit(${ai.priceEst},${ai.priceLow},${ai.priceHigh})" />
+        </div>
+        <button class="calc-btn" onclick="calcProfit(${ai.priceEst},${ai.priceLow},${ai.priceHigh})">Calculate</button>
+      </div>
+      <div class="profit-result" id="profitResult">
+        <div class="profit-stats">
+          <div class="profit-stat"><div class="profit-stat-label">Buy at</div><div class="profit-stat-value neu" id="pBuy">—</div></div>
+          <div class="profit-stat"><div class="profit-stat-label">Sell for</div><div class="profit-stat-value neu" id="pSell">—</div></div>
+          <div class="profit-stat"><div class="profit-stat-label">Profit</div><div class="profit-stat-value" id="pProfit">—</div></div>
+        </div>
+        <div class="profit-verdict" id="profitVerdict"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    ${motHTML()}
+    <div class="divider"></div>
+
+    <div class="actions">
+      <a class="action-btn primary" href="${atURL}" target="_blank" rel="noopener">🔍 Search Autotrader</a>
+      <button class="action-btn secondary" onclick="clearResult()">↩ Check another bike</button>
+    </div>
+  </div>`;
+
+  const el = document.getElementById('result');
+  el.innerHTML = html;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function calcProfit(estRetail, priceLow, priceHigh) {
+  const buy = parseInt(document.getElementById('buyPrice').value);
+  if (!buy || buy <= 0) return;
+
+  const sell = Math.round(estRetail);
+  const profit = sell - buy;
+  const margin = ((profit / sell) * 100).toFixed(0);
+
+  document.getElementById('pBuy').textContent   = '£' + buy.toLocaleString('en-GB');
+  document.getElementById('pSell').textContent  = '£' + sell.toLocaleString('en-GB');
+  document.getElementById('pProfit').textContent = (profit >= 0 ? '+' : '') + '£' + Math.abs(profit).toLocaleString('en-GB');
+
+  const profitEl = document.getElementById('pProfit');
+  profitEl.className = 'profit-stat-value ' + (profit > 0 ? 'pos' : profit < 0 ? 'neg' : 'neu');
+
+  const verdict = document.getElementById('profitVerdict');
+  if (profit >= 1200) {
+    verdict.className = 'profit-verdict great';
+    verdict.textContent = '✓ Strong buy — £' + profit.toLocaleString('en-GB') + ' profit';
+  } else if (profit >= 800) {
+    verdict.className = 'profit-verdict ok';
+    verdict.textContent = '~ Worth it — £' + profit.toLocaleString('en-GB') + ' profit';
+  } else if (profit >= 500) {
+    verdict.className = 'profit-verdict tight';
+    verdict.textContent = '⚠ Tight — £' + profit.toLocaleString('en-GB') + ' profit, consider negotiating lower';
+  } else {
+    verdict.className = 'profit-verdict loss';
+    verdict.textContent = profit > 0
+      ? '✕ Avoid — only £' + profit.toLocaleString('en-GB') + ' profit, not worth it'
+      : '✕ Avoid — you\'d be paying £' + Math.abs(profit).toLocaleString('en-GB') + ' over retail';
+  }
+
+  document.getElementById('profitResult').style.display = 'block';
+}
+
+function clearResult() {
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('regInput').value = '';
+  document.getElementById('mileageInput').value = '';
+  document.getElementById('errorBox').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('regInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('mileageInput').focus();
+});
+document.getElementById('mileageInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runLookup();
+});
+
+function runDemo() {
+  document.getElementById('demoBanner').style.display = 'block';
+  document.getElementById('errorBox').style.display = 'none';
+
+  const demoData = {
+    make: 'Kawasaki',
+    model: 'Z650',
+    colour: 'Metallic Spark Black',
+    year: '2019',
+    engineCC: '649',
+    fuelType: 'Petrol',
+    miles: 11240,
+    latest: {
+      testResult: 'PASSED',
+      completedDate: '2025-03-14',
+      expiryDate: '2026-03-14',
+      odometerValue: '11240',
+      rfrAndComments: [
+        { type: 'ADVISORY', text: 'Nearside front fork seal slightly weeping (5.3.1)', dangerous: false },
+        { type: 'ADVISORY', text: 'Rear tyre worn, approaching legal limit (5.2.3 (e))', dangerous: false },
+        { type: 'MINOR',    text: 'Brake fluid discoloured (1.1.2)', dangerous: false }
+      ]
+    },
+    tests: [
+      {
+        testResult: 'PASSED',
+        completedDate: '2025-03-14',
+        expiryDate: '2026-03-14',
+        odometerValue: '11240',
+        rfrAndComments: [
+          { type: 'ADVISORY', text: 'Nearside front fork seal slightly weeping (5.3.1)', dangerous: false },
+          { type: 'ADVISORY', text: 'Rear tyre worn, approaching legal limit (5.2.3 (e))', dangerous: false },
+          { type: 'MINOR',    text: 'Brake fluid discoloured (1.1.2)', dangerous: false }
+        ]
+      },
+      {
+        testResult: 'PASSED',
+        completedDate: '2024-03-10',
+        odometerValue: '7820',
+        rfrAndComments: [
+          { type: 'ADVISORY', text: 'Rear brake pads wearing thin (1.1.2)', dangerous: false }
+        ]
+      }
+    ],
+    ai: {
+      priceLow: 3800,
+      priceEst: 5200,
+      priceHigh: 6200,
+      mileageNote: 'At 11,240 miles this is below average for a 2019 bike — expect stronger retail value than a high-mileage equivalent.',
+      insight: 'The Z650 is a solid middleweight with strong demand and few known reliability issues. The weeping fork seal and worn rear tyre are your negotiating points — budget around £150–200 to sort both before retail.'
+    }
+  };
+
+  renderResult(demoData);
+}
+
+loadCreds();
+</script>
+</body>
+</html>
