@@ -594,7 +594,18 @@ Respond ONLY as JSON, no markdown: {"priceLow":0,"priceEst":0,"priceHigh":0,"mil
 
 function renderResult({ make, model, colour, year, engineCC, fuelType, miles, latest, tests, ai }) {
   const makeModel = `${make} ${model}`.trim();
-  const atURL = `https://www.autotrader.co.uk/bikes/used?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&year-from=${Math.max(2000,parseInt(year)-2)}&year-to=${parseInt(year)+1}`;
+  // Autotrader uses specific make slugs
+  const atMakeMap = {
+    'YAMAHA': 'Yamaha', 'HONDA': 'Honda', 'KAWASAKI': 'Kawasaki',
+    'SUZUKI': 'Suzuki', 'BMW': 'BMW', 'DUCATI': 'Ducati',
+    'TRIUMPH': 'Triumph', 'KTM': 'KTM', 'APRILIA': 'Aprilia',
+    'HARLEY-DAVIDSON': 'Harley-Davidson', 'ROYAL ENFIELD': 'Royal Enfield',
+    'MV AGUSTA': 'MV Agusta', 'HUSQVARNA': 'Husqvarna', 'BENELLI': 'Benelli'
+  };
+  const atMake = atMakeMap[make.toUpperCase()] || make;
+  // Strip hyphens and special chars from model for Autotrader search
+  const atModel = model.replace(/[-]/g, ' ').trim();
+  const atURL = `https://www.autotrader.co.uk/bikes/used?make=${encodeURIComponent(atMake)}&model=${encodeURIComponent(atModel)}&year-from=${Math.max(2000,parseInt(year)-2)}&year-to=${parseInt(year)+1}`;
 
   const failures   = (latest?.rfrAndComments||[]).filter(i=>i.type==='FAIL');
   const advisories = (latest?.rfrAndComments||[]).filter(i=>i.type==='ADVISORY');
