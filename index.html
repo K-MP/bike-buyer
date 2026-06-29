@@ -561,12 +561,22 @@ async function runLookup() {
   try {
     const advCount  = (latest?.rfrAndComments||[]).filter(i=>i.type==='ADVISORY').length;
     const failCount = (latest?.rfrAndComments||[]).filter(i=>i.type==='FAIL').length;
-    const prompt = `You are a UK used motorcycle dealer valuation expert. A garage is considering buying:
+    const prompt = `You are a UK used motorcycle dealer valuation expert with deep knowledge of realistic UK market prices. A small independent dealer is considering buying this bike:
 Make: ${make}, Model: ${model}, Year: ${year}, Engine: ${engineCC?engineCC+'cc':'unknown'}, Fuel: ${fuelType}, Colour: ${colour}
 Mileage: ${miles ? fmtMi(miles) : 'unknown'}
 Latest MOT: ${latest ? latest.testResult + ' (' + latest.completedDate + ')' : 'none'}
 ${advCount ? advCount+' advisory notice(s). ' : ''}${failCount ? failCount+' failure(s). ' : ''}
-Give: priceLow (rough/high mileage retail), priceEst (fair retail for this mileage/age), priceHigh (excellent condition retail), mileageNote (one sentence on mileage impact, omit if unknown), insight (2 sentences of dealer buying advice).
+
+Provide REALISTIC and CONSERVATIVE UK dealer retail prices based on what bikes actually sell for on Autotrader and eBay Motors right now — not aspirational asking prices. Prices should reflect what a dealer would realistically achieve on a forecourt sale, accounting for the fact that many bikes sit unsold and get reduced.
+
+- priceLow: realistic price for a rough, high mileage or advisory-heavy example — what the bottom 25% of listings actually sell for
+- priceEst: fair realistic dealer retail for a typical example at this mileage and age — be conservative, this is what you'd price it at to sell within 4 weeks
+- priceHigh: only achievable for a genuinely exceptional, low mileage, full history example in perfect condition — top 10% of the market
+
+Do NOT inflate prices. If in doubt, go lower. A dealer losing money on a bad buy is worse than underestimating.
+
+Also give: mileageNote (one sentence on how this mileage affects value, omit if unknown), insight (2 sentences of practical dealer buying advice for this specific model).
+
 Respond ONLY as JSON, no markdown: {"priceLow":0,"priceEst":0,"priceHigh":0,"mileageNote":"","insight":""}`;
 
     const ar = await fetch('https://api.anthropic.com/v1/messages', {
