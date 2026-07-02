@@ -600,6 +600,10 @@ Respond ONLY as JSON, no markdown: {"priceLow":0,"priceEst":0,"priceHigh":0,"mil
     const ad = await ar.json();
     const txt = ad.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
     ai = JSON.parse(txt);
+    // Apply 30% reduction to account for AI consistently overestimating vs real UK sold prices
+    ai.priceLow  = Math.round(ai.priceLow  * 0.70);
+    ai.priceEst  = Math.round(ai.priceEst  * 0.70);
+    ai.priceHigh = Math.round(ai.priceHigh * 0.70);
   } catch(e) { showError(e.message); return; }
 
   stopLoading();
@@ -617,8 +621,12 @@ function renderResult({ make, model, colour, year, engineCC, fuelType, miles, la
     'MV AGUSTA': 'MV Agusta', 'HUSQVARNA': 'Husqvarna', 'BENELLI': 'Benelli'
   };
   const atMake = atMakeMap[make.toUpperCase()] || make;
-  // Strip hyphens and special chars from model for Autotrader search
-  const atModel = model.replace(/[-]/g, ' ').trim();
+  // Strip hyphens, year references and tidy model name for Autotrader
+  const atModel = model
+    .replace(/[-]/g, ' ')
+    .replace(/(19|20)\d{2}/g, '')  // remove any year like 2021
+    .replace(/\s+/g, ' ')
+    .trim();
   const atURL = `https://www.autotrader.co.uk/bikes/used?make=${encodeURIComponent(atMake)}&model=${encodeURIComponent(atModel)}&year-from=${Math.max(2000,parseInt(year)-2)}&year-to=${parseInt(year)+1}`;
 
   const failures   = (latest?.rfrAndComments||[]).filter(i=>i.type==='FAIL');
