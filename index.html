@@ -627,7 +627,7 @@ function renderResult({ make, model, colour, year, engineCC, fuelType, miles, la
     .replace(/(19|20)\d{2}/g, '')  // remove any year like 2021
     .replace(/\s+/g, ' ')
     .trim();
-  const atURL = `https://www.autotrader.co.uk/bikes/used?make=${encodeURIComponent(atMake)}&model=${encodeURIComponent(atModel)}&year-from=${Math.max(2000,parseInt(year)-2)}&year-to=${parseInt(year)+1}`;
+  const atURL = `https://www.autotrader.co.uk/bikes/used?make=${encodeURIComponent(atMake)}&year-from=${Math.max(2000,parseInt(year)-2)}&year-to=${parseInt(year)+1}`;
 
   const failures   = (latest?.rfrAndComments||[]).filter(i=>i.type==='FAIL');
   const advisories = (latest?.rfrAndComments||[]).filter(i=>i.type==='ADVISORY');
